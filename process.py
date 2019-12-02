@@ -52,6 +52,22 @@ def int2(x,y,z,npoints):
     znew = intdata(xx, yy)
     return (xx,yy,znew)
 
+def int3(x,y,z,npoints):
+    """
+    Simple linear interpolation, returns x,y arrays and Z as function
+    :param x:
+    :param y:
+    :param z:
+    :param npoints: number of points in both directions
+    :return: xarray, yarray, Zfunction
+    """
+    coord = list(zip(x, y))
+    intdata = intp.LinearNDInterpolator(coord, z)
+    xnew = np.linspace(x.min(), x.max(), npoints)
+    ynew = np.linspace(y.min(), y.max(), npoints)
+
+    return (xnew,ynew,intdata)
+
 def writecubes(x,y,z,file,xmin=0,xmax=100, ymin=0,ymax=100, zmin=3, zmax=100):
     """
 
@@ -87,6 +103,53 @@ def writecubes(x,y,z,file,xmin=0,xmax=100, ymin=0,ymax=100, zmin=3, zmax=100):
             x1=a, y1=b, z1=3,
             incrementx=incrementx, incrementy=incrementy,
             height=c),file=file)
+
+def writepolyhedra(x,y,z,file,xmin=0,xmax=100, ymin=0,ymax=100, zmin=3, zmax=100):
+    """
+
+    :param x: X coordinates of 2d grid points
+    :param y: Y coordinates of 2d grid points
+    :param z: Z values of 2d grid points
+    :param xmin:
+    :param xmax:
+    :param ymin:
+    :param ymax:
+    :param zscale:
+    :return:
+    """
+    # Calculate the x and y size of prism in mm based on number of prisms
+    incrementx=(xmax-xmin)/x.shape[0]
+    incrementy = (ymax - ymin) / x.shape[1]
+    # rescale x, y ,z arrays to range 0-xmax mm
+    x=x-x.min()
+    x=x*((xmax-incrementx)/x.max())
+    y=y-y.min()
+    y = y * ((ymax-incrementx) / y.max())
+    z = z - z.min()
+    z = z * ((zmax - zmin) / z.max())
+
+    for i in range(0,x.shape[0]-1):  #over X
+        for j in range(0, x.shape[1]-1):  #over Y
+            x0 = x[i, j]
+            x1 = x[i, j + 1]
+            y0 = y[i, j]
+            y1 = y[i +1, j]
+            z4 = z[i, j]
+            z5 = z[i , j +1]
+            z6 = z[i + 1, j + 1]
+            z7 = z[i +1, j]
+
+            print("polyhedron( points=[ [{x0},{y0},{zfloor}], [{x1},{y0},{zfloor}],"
+                  "[{x1},{y1},{zfloor}],[{x0},{y1},{zfloor}],"
+                  "[{x0}, {y0}, {z4}], [{x1}, {y0}, {z5}], "
+                   "[{x1},{y1},{z6}],[{x0},{y1},{z7}]],"
+                  "faces=[[0,1,2,3],[0,1,5,4],[1,2,6,5],[3,2,6,7],[3,0,4,7],[4,5,6,7]]"
+                  ");\n".format(
+                x0=x0, y0=y0, x1=x1, y1=y1,
+                zfloor = 3,
+                z4=z4, z5=z5, z6=z6, z7=z7),
+                file=file
+            )
 
 def writemargins(file):
 
@@ -372,10 +435,11 @@ translate([-11,97,53])
 
 x,y,z=readdata("all.meps.data")
 # Here adjust the interpolation grid density
-xx,yy,zz=int2(x,y,z,100)
+xx,yy,zz=int2(x,y,z,20)
 with open("out.scad", 'w') as file:
     writemargins(file)
-    writecubes(xx,yy,zz,file)
+   # writecubes(xx,yy,zz,file)
+    writepolyhedra(xx,yy,zz,file)
 
 fig = plt.figure()
 ax = fig.add_subplot(121, projection='3d') #, projection='3d'
