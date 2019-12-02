@@ -151,7 +151,61 @@ def writepolyhedra(x,y,z,file,xmin=0,xmax=100, ymin=0,ymax=100, zmin=3, zmax=100
                 file=file
             )
 
-def writemargins(file):
+
+def writemargins(xx,yy,zz,file):
+
+
+    x_description="C-H distance"
+    y_description="H-Br distance"
+    z_description="activation energy"
+
+    print("""//base extensions
+translate([-15,-15,0])
+color([0,1,1])
+cube([115,115,3]);
+
+translate([-15,97,0])
+color([0,1,1])
+cube([15,3,100]);
+//
+""", file=file)
+
+    for i in range(0,5):
+        print("translate([{xpos}, -2, 2]) color([0, 1, 1]) cube([1, 2, 2]);\n".format(
+            xpos=-0.5+i*20
+        ),
+        file=file)
+        print("translate([{xpos}, -5, 3]) rotate([0, 0, 0]) linear_extrude(height=1)"
+        "text(text=\"{xvalue:.3f}\", size=4, halign=\"center\", valign=\"center\", "
+              "font=\"Arial:style=bold\");".format(
+            xpos=i*20,
+            xvalue=i*((x.max()-x.min())/5)+x.min()
+        ),file=file)
+    print("""translate([50, -11, 3])
+    rotate([0, 0, 0])
+    linear_extrude(height=1)
+    text(text="{x_description}",
+         size=4,
+         halign="center",
+         valign="center",
+         font="Arial:style=bold"); """.format(x_description=x_description),
+          file=file)
+
+    for i in range(0,4):
+        ypos=10+i*20
+        print("translate([-2,{ypos},2]) color([0,1,1]) cube([2,1,2]);\n".format(
+            ypos=ypos-0.5
+        ),file=file)
+        print("translate([-5,{ypos},3]) rotate([0,0,270]) linear_extrude(height=1)"
+              "text(text=\"{yvalue:.3f}\", size=4, halign=\"center\", valign=\"center\", "
+              "font=\"Arial:style=bold\");".format(
+            ypos=ypos,
+            yvalue=ypos*0.1*((y.max()-y.min())/5)+y.min()
+        ),file=file)
+
+
+
+def writemargins2(file):
 
     head = """
     //Adjust axis units and descriptions here:
@@ -436,19 +490,19 @@ translate([-11,97,53])
 x,y,z=readdata("all.meps.data")
 # Here adjust the interpolation grid density
 xx,yy,zz=int2(x,y,z,20)
-with open("out.scad", 'w') as file:
-    writemargins(file)
+with open("out2.scad", 'w') as file:
+    writemargins(xx,yy,zz,file)
    # writecubes(xx,yy,zz,file)
     writepolyhedra(xx,yy,zz,file)
 
-fig = plt.figure()
-ax = fig.add_subplot(121, projection='3d') #, projection='3d'
+#fig = plt.figure()
+#ax = fig.add_subplot(121, projection='3d') #, projection='3d'
 
-ax.scatter(xs=x, ys=y, zs=z)
-ax.scatter(xs=xx.flatten(), ys=yy.flatten(), zs=zz.flatten(),s=1)
+#ax.scatter(xs=x, ys=y, zs=z)
+#ax.scatter(xs=xx.flatten(), ys=yy.flatten(), zs=zz.flatten(),s=1)
 
-ax2 = fig.add_subplot(122)
-ax2.contour(xx, yy, zz, levels=30)
+#ax2 = fig.add_subplot(122)
+#ax2.contour(xx, yy, zz, levels=30)
 
-plt.show()
+#plt.show()
 
