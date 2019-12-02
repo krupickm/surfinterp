@@ -122,35 +122,42 @@ def writepolyhedra(x,y,z,file,xmin=0,xmax=100, ymin=0,ymax=100, zmin=3, zmax=100
     incrementy = (ymax - ymin) / x.shape[1]
     # rescale x, y ,z arrays to range 0-xmax mm
     x=x-x.min()
-    x=x*((xmax-incrementx)/x.max())
+    x=x*((xmax-xmin)/x.max())
     y=y-y.min()
-    y = y * ((ymax-incrementx) / y.max())
+    y = y * ((ymax-ymin) / y.max())
     z = z - z.min()
-    z = z * ((zmax - zmin) / z.max())
-
+    z = z * ((zmax - zmin) / z.max()) +zmin
+    print("""CubeFaces = [
+  [0,1,2,3],  // bottom
+  [4,5,1,0],  // front
+  [7,6,5,4],  // top
+  [5,6,2,1],  // right
+  [6,7,3,2],  // back
+  [7,4,0,3]]; // left""", file=file)
+    print("union() {",file=file)
     for i in range(0,x.shape[0]-1):  #over X
         for j in range(0, x.shape[1]-1):  #over Y
             x0 = x[i, j]
-            x1 = x[i, j + 1]
+            x1 = x[i, j + 1] # - 0.001
             y0 = y[i, j]
-            y1 = y[i +1, j]
+            y1 = y[i +1, j] # - 0.001
             z4 = z[i, j]
             z5 = z[i , j +1]
             z6 = z[i + 1, j + 1]
             z7 = z[i +1, j]
 
-            print("polyhedron( points=[ [{x0},{y0},{zfloor}], [{x1},{y0},{zfloor}],"
-                  "[{x1},{y1},{zfloor}],[{x0},{y1},{zfloor}],"
-                  "[{x0}, {y0}, {z4}], [{x1}, {y0}, {z5}], "
-                   "[{x1},{y1},{z6}],[{x0},{y1},{z7}]],"
-                  "faces=[[0,1,2,3],[0,1,5,4],[1,2,6,5],[3,2,6,7],[3,0,4,7],[4,5,6,7]]"
+            print("polyhedron( points=[ [{x0:.3f},{y0:.3f},{zfloor}], [{x1:.3f},{y0:.3f},{zfloor}],"
+                  "[{x1:.3f},{y1:.3f},{zfloor}],[{x0:.3f},{y1:.3f},{zfloor}],"
+                  "[{x0:.3f}, {y0:.3f}, {z4:.3f}], [{x1:.3f}, {y0:.3f}, {z5:.3f}], "
+                   "[{x1:.3f},{y1:.3f},{z6:.3f}],[{x0:.3f},{y1:.3f},{z7:.3f}]],"
+                  "faces=CubeFaces"
                   ");\n".format(
                 x0=x0, y0=y0, x1=x1, y1=y1,
                 zfloor = 3,
                 z4=z4, z5=z5, z6=z6, z7=z7),
                 file=file
             )
-
+    print("}\n", file=file)
 
 def writemargins(xx,yy,zz,file):
 
