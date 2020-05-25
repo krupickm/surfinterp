@@ -162,7 +162,7 @@ def writepolyhedra(x, y, z, file, xmin=0, xmax=100, ymin=0, ymax=100, zmin=3, zm
     print("}\n", file=file)
 
 
-def writemargins(xx, yy, zz, file):
+def writemargins(xx, yy, zz, file, xmin=0, xmax=100, ymin=0, ymax=100, zmin=3, zmax=100):
     x_description = "Distance C-C (A)"
     y_description = "Distance C-Br (A)"
     z_description = "Energy (kcal/mol)"
@@ -170,83 +170,110 @@ def writemargins(xx, yy, zz, file):
     y_description = args.yname
     z_description = args.zname
 
+    basesize=15
     print("""//base extensions
-    translate([-15,-15,0])
+    translate([{basemin},{basemin},0])
     color([0,1,1])
-    cube([115,115,3]);
+    cube([{basemax},{basemax},3]);
     //
-    """, file=file)
+    """.format(basemin=xmin-basesize,basemax=xmax+basesize), file=file)
 
-    for i in range(0, 5):
+    numtics=5
+    for i in range(0, numtics):
+        xpercentage=i/numtics # percentage over the axis
+        xticposition=(xmax-xmin)*xpercentage
+        xticvalue=(xx.max() - xx.min())*xpercentage+xx.min()
+        # X tics
         print("translate([{xpos}, -2, 2]) color([0, 1, 1]) cube([1, 2, 2]);\n".format(
-            xpos=-0.5 + i * 20
-        ),
+            xpos=xticposition-1),
             file=file)
+        # X tics label
         print("translate([{xpos}, -5, 3]) rotate([0, 0, 0]) linear_extrude(height=1)"
-              "text(text=\"{xvalue:.3f}\", size=4, halign=\"center\", valign=\"center\", "
+              "text(text=\"{xvalue:.2f}\", size=4, halign=\"center\", valign=\"center\", "
               "font=\"Arial:style=bold\");".format(
-            xpos=i * 20,
-            xvalue=i * ((x.max() - x.min()) / 5) + x.min()
-        ), file=file)
-    print("""translate([42, -11, 3])
+            xpos=xticposition,
+            xvalue=xticvalue), file=file)
+
+    # X axis label
+    print("""translate([{xpos}, -11, 3])
         rotate([0, 0, 0])
         linear_extrude(height=1)
         text(text="{x_description}",
              size=4,
              halign="center",
              valign="center",
-             font="Arial:style=bold"); """.format(x_description=x_description),
+             font="Arial:style=bold"); """.format(x_description=x_description, xpos=(xmax-xmin-len(x_description))/2),
           file=file)
 
-    for i in range(0, 4):
-        ypos = 10 + i * 20
+    # Y tics
+    print("// Y axis",file=file)
+    numytics=numtics-1
+    for i in range(0, numytics):
+        ypercentage = (i + 0.5 ) / numtics  # percentage over the axis
+        yticposition = (ymax - ymin) * ypercentage
+        yticvalue = (y.max() - y.min()) * ypercentage + y.min()
+
+        # Y tics
         print("translate([-2,{ypos},2]) color([0,1,1]) cube([2,1,2]);\n".format(
-            ypos=ypos - 0.5
+            ypos=yticposition - 1
         ), file=file)
+        # Y tics label
         print("translate([-5,{ypos},3]) rotate([0,0,270]) linear_extrude(height=1)"
-              "text(text=\"{yvalue:.3f}\", size=4, halign=\"center\", valign=\"center\", "
+              "text(text=\"{yvalue:.2f}\", size=4, halign=\"center\", valign=\"center\", "
               "font=\"Arial:style=bold\");".format(
-            ypos=ypos,
-            yvalue=i * ((y.max() - y.min()) / 4) + y.min()
+            ypos=yticposition,
+            yvalue=yticvalue
         ), file=file)
-    print("""translate([-11, 45, 3])
+
+    # Y axis label
+    print("""translate([-11, {ypos}, 3])
             rotate([0, 0, 270])
             linear_extrude(height=1)
             text(text="{y_description}",
                  size=4,
                  halign="center",
                  valign="center",
-                 font="Arial:style=bold"); """.format(y_description=y_description),
+                 font="Arial:style=bold"); """.format(y_description=y_description,
+                                                      ypos=(ymax-ymin-len(y_description))/2),
           file=file)
 
-    print("""difference(){
+    print("""// Z axis
+    difference(){
 
             """, file=file)
+    # Z block
     print("""
-            translate([-15,96,0])
+            translate([-15,{ymax}-4,0])
         color([0,1,1])
-        cube([15,4,100]);
+        cube([15,4,{zmax}]);
         //
-        """, file=file)
-    for i in range(0, 4):
-        zpos = 10 + i * 25
-        print("translate([-2,96,{zpos}]) color([0,1,1]) cube([2,1,2]);\n".format(
-            zpos=zpos - 0.5
+        """.format(ymax=ymax,zmax=zmax), file=file)
+    numztics = numtics - 1
+    for i in range(0, numztics):
+        zpercentage = (i + 0.5) / numtics  # percentage over the axis
+        zticposition = (zmax - zmin) * zpercentage
+        zticvalue = (z.max() - z.min()) * zpercentage + z.min()
+
+        print("translate([-2,{ymax}-4,{zpos}]) color([0,1,1]) cube([2,1,2]);\n".format(
+            zpos=zticposition - 1,ymax=ymax
         ), file=file)
-        print("translate([-5,97,{zpos}]) rotate([0,90,270]) linear_extrude(height=1)"
-              "text(text=\"{zvalue:.3f}\", size=4, halign=\"center\", valign=\"center\", "
+        print("translate([-5,{ymax}-3,{zpos}]) rotate([0,90,270]) linear_extrude(height=1)"
+              "text(text=\"{zvalue:.1f}\", size=4, halign=\"center\", valign=\"center\", "
               "font=\"Arial:style=bold\");".format(
-            zpos=zpos,
-            zvalue=i * ((z.max() - z.min()) / 4) + z.min()
+            zpos=zticposition,
+            zvalue=zticvalue,
+            ymax=ymax
         ), file=file)
-        print("""translate([-11, 97, 50])
+        print("""translate([-11, {ymax}-3, {zpos}])
                     rotate([0, 90, 270])
                     linear_extrude(height=1)
                     text(text="{z_description}",
                          size=4,
                          halign="center",
                          valign="center",
-                         font="Arial:style=bold"); """.format(z_description=z_description),
+                         font="Arial:style=bold"); """.format(z_description=z_description,
+                                                              zpos=(zmax-zmin-len(z_description))/2,
+                                                              ymax=ymax),
               file=file)
 
     print("""}
@@ -266,10 +293,11 @@ args = parser.parse_args()
 x, y, z = readdata(args.inputfile)
 # Here adjust the interpolation grid density
 xx, yy, zz = int2(x, y, z, args.grid)
+cubesize=70
 with open(args.inputfile + ".scad", 'w') as file:
-    writemargins(xx, yy, zz, file)
+    writemargins(xx, yy, zz, file,xmax=cubesize,ymax=cubesize,zmax=cubesize)
     # writecubes(xx,yy,zz,file)
-    writepolyhedra(xx, yy, zz, file)
+    writepolyhedra(xx, yy, zz, file,xmax=cubesize,ymax=cubesize,zmax=cubesize)
 
 # fig = plt.figure()
 # ax = fig.add_subplot(121, projection='3d') #, projection='3d'
